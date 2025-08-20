@@ -212,7 +212,18 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ isActive, onToggle
   };
 
   const toggleTimer = () => {
-    setIsRunning(!isRunning);
+    const newRunningState = !isRunning;
+    setIsRunning(newRunningState);
+    
+    // Si on démarre le timer, s'assurer que le temps est correct pour la session actuelle
+    if (newRunningState && timeLeft === 0) {
+      const duration = currentSession === 'work' 
+        ? settings.workDuration * 60
+        : currentSession === 'shortBreak' 
+        ? settings.shortBreak * 60
+        : settings.longBreak * 60;
+      setTimeLeft(duration);
+    }
   };
 
   const resetTimer = () => {
