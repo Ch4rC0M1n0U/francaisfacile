@@ -159,6 +159,21 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ isActive, onToggle
     setCurrentMessage(messages[0]);
     setMessageIndex(0);
   }, [currentSession]);
+
+  // S'assurer que le timer a la bonne durée quand la session change
+  useEffect(() => {
+    if (!isRunning && timeLeft === 0) {
+      let duration;
+      if (currentSession === 'work') {
+        duration = settings.workDuration * 60;
+      } else if (currentSession === 'shortBreak') {
+        duration = settings.shortBreak * 60;
+      } else {
+        duration = settings.longBreak * 60;
+      }
+      setTimeLeft(duration);
+    }
+  }, [currentSession, settings, isRunning, timeLeft]);
   // Timer principal - NE PAS réinitialiser automatiquement
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -196,14 +211,18 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ isActive, onToggle
       setSessionCount(prev => prev + 1);
       const nextSession = (sessionCount + 1) % settings.sessionsBeforeLongBreak === 0 ? 'longBreak' : 'shortBreak';
       setCurrentSession(nextSession);
+      
+      // Calculer la durée de la pause
       const breakDuration = nextSession === 'longBreak' ? settings.longBreak : settings.shortBreak;
       setTimeLeft(breakDuration * 60);
       setShowBreakOverlay(true);
+      
       // Démarrer automatiquement la pause après un petit délai
       setTimeout(() => {
         setIsRunning(true);
       }, 1000);
     } else {
+      // Fin de pause, retour au travail
       setCurrentSession('work');
       setTimeLeft(settings.workDuration * 60);
       setShowBreakOverlay(false);
@@ -217,11 +236,14 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ isActive, onToggle
     
     // Si on démarre le timer, s'assurer que le temps est correct pour la session actuelle
     if (newRunningState && timeLeft === 0) {
-      const duration = currentSession === 'work' 
-        ? settings.workDuration * 60
-        : currentSession === 'shortBreak' 
-        ? settings.shortBreak * 60
-        : settings.longBreak * 60;
+      let duration;
+      if (currentSession === 'work') {
+        duration = settings.workDuration * 60;
+      } else if (currentSession === 'shortBreak') {
+        duration = settings.shortBreak * 60;
+      } else {
+        duration = settings.longBreak * 60;
+      }
       setTimeLeft(duration);
     }
   };
@@ -249,7 +271,6 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ isActive, onToggle
     setTimeLeft(settings.workDuration * 60);
     setShowBreakOverlay(false);
     setIsRunning(false);
-    setTimerActive(false);
   };
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
